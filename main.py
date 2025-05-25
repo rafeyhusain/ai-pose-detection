@@ -46,8 +46,8 @@ def main():
         live_analyzer.start()
 
 if __name__ == "__main__":
-    counter = MultiplePersonDetector(model_name="yolov8n.pt")  # you can use yolov8s.pt or yolov8m.pt
-    result = counter.analyze_video("data/video3.mp4")
+    counter = MultiplePersonDetector(model_name="yolov8n.pt", confidence=0.5, frame_skip=10)
+    result = counter.analyze_video("data/video2.mp4")
 
     with open("report_people.json", "w") as f:
         json.dump(result, f, indent=4)

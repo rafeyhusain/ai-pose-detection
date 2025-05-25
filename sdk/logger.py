@@ -2,6 +2,9 @@ import time
 import traceback
 
 class Logger:
+    def finished(self, message, start_time=None):
+        self.log(f"✅ {message}", start_time)
+
     def log(self, message, start_time=None):
         if start_time:
             time_spent = time.time() - start_time

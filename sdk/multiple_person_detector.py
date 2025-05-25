@@ -7,7 +7,7 @@ from sdk.logger import Logger
 
 
 class MultiplePersonDetector:
-    def __init__(self, model_name="yolov8n.pt", confidence=0.5, frame_skip=100):
+    def __init__(self, model_name="yolov8n.pt", confidence=0.5, frame_skip=10):
         self.logger = Logger()
         self.confidence = confidence
         self.frame_skip = frame_skip
@@ -35,8 +35,8 @@ class MultiplePersonDetector:
         self.logger.log(f"Video opened: {video_path}")
         return cap
 
-    def save_frame(self, frame, output_folder, timestamp_str):
-        image_filename = output_folder / f"{timestamp_str}.png"
+    def save_frame(self, frame, output_folder, timestamp):
+        image_filename = output_folder / f"{timestamp}.png"
         cv2.imwrite(str(image_filename), frame)
         return str(image_filename)
 
@@ -53,7 +53,6 @@ class MultiplePersonDetector:
         try:
             cap = self.open_video(video_path)
             if cap is None:
-                self.logger.error(f"Cannot open video file: {video_path}")
                 return {"detected": False, "confidence": 0.0, "detected_timestamps": []}
 
             timestamps = []
@@ -98,10 +97,11 @@ class MultiplePersonDetector:
                     timestamp = self.to_timestamp(cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0)
                     image_path = self.save_frame(frame, output_folder, timestamp)
 
-                    self.logger.log(f"Detected [{total_people}] people at [{timestamp}] with confidence [{confidence}]")
+                    self.logger.log(f"At [{timestamp}], detected [{total_people}] people. Confidence [{confidence}]")
 
                     timestamps.append({
                         "timestamp": timestamp,
+                        "detected_people": total_people,
                         "confidence": confidence,
                         "image": image_path
                     })
@@ -114,6 +114,9 @@ class MultiplePersonDetector:
 
             confidence_score = round(detected_frames / total_frames, 2) if total_frames else 0
             self.logger.log("Video analysis complete", start_time)
+
+            if detected_frames == 0:
+                self.logger.log("Not detected more than 1 person in the video")
 
             return {
                 "detected": detected_frames > 0,
