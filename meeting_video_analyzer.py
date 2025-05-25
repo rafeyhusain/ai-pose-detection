@@ -6,17 +6,33 @@ import os
 from glob import glob
 
 class MeetingVideoAnalyzer:
-    def __init__(self, frame_skip=5, look_away_thresh=0.3):
+    def __init__(self, frame_skip=0, look_away_thresh=0.1):
         self.frame_skip = frame_skip
         self.look_away_thresh = look_away_thresh
         self.face_mesh = mp.solutions.face_mesh.FaceMesh(static_image_mode=False)
         self.holistic = mp.solutions.holistic.Holistic(static_image_mode=False)
 
-    def _is_looking_away(self, landmarks, img_width):
-        left_eye_x = landmarks[33].x * img_width
-        right_eye_x = landmarks[263].x * img_width
-        eye_center = (left_eye_x + right_eye_x) / 2
-        return abs(eye_center - img_width / 2) > (img_width * self.look_away_thresh)
+    def _is_looking_away(self, frame_index, landmarks):
+        # Nose, left eye, right eye, chin
+        nose = landmarks[1]
+        left_eye = landmarks[33]
+        right_eye = landmarks[263]
+        chin = landmarks[152]
+
+        # Face direction vector approximation
+        face_vector_x = right_eye.x - left_eye.x
+        face_vector_y = chin.y - nose.y
+
+        # Normalize the vector (optional, more precise)
+        magnitude = np.sqrt(face_vector_x**2 + face_vector_y**2)
+        if magnitude == 0:
+            return False
+        face_vector_x /= magnitude
+        face_vector_y /= magnitude
+
+        # If face_vector_x is large, person is likely looking sideways
+        print(f"Frame {frame_index}: face_vector_x = {face_vector_x:.2f}")
+        return abs(face_vector_x) > 0.35  # Tune this threshold
 
     def analyze_file(self, video_path):
         cap = cv2.VideoCapture(video_path)
@@ -53,7 +69,7 @@ class MeetingVideoAnalyzer:
                     results["multiple_people_detected"] = True
 
                 face_landmarks = mesh_result.multi_face_landmarks[0].landmark
-                if self._is_looking_away(face_landmarks, width):
+                if self._is_looking_away(frame_index, face_landmarks):
                     if look_start is None:
                         look_start = frame_index
                 else:

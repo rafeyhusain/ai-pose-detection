@@ -19,6 +19,17 @@ Results are saved as JSON reports containing metrics like:
 - Head turn detection
 - Multiple people detection
 
+```json
+{
+    "video_file": "video2.mp4",
+    "look_away_events": 0,
+    "total_look_away_duration_sec": 0,
+    "longest_look_away_sec": 0,
+    "head_turn_detected": false,
+    "multiple_people_detected": false
+}
+```
+
 ## Setup Guide
 
 - Install Python 3.10, as MediaPipe supports Python 3.7–3.10

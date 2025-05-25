@@ -1,8 +1,8 @@
 {
-    "video_file": "video1.mp4",
-    "look_away_events": 0,
-    "total_look_away_duration_sec": 0,
-    "longest_look_away_sec": 0,
-    "head_turn_detected": true,
+    "video_file": "video2.mp4",
+    "look_away_events": 2,
+    "total_look_away_duration_sec": 2.17,
+    "longest_look_away_sec": 2.0,
+    "head_turn_detected": false,
     "multiple_people_detected": false
 }
