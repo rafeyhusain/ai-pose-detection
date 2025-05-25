@@ -1,22 +1,38 @@
 import argparse
+import sys
 
 class CmdArgs:
-    def __init__(self):
-        parser = argparse.ArgumentParser(description="Video Behavior Analysis")
-        subparsers = parser.add_subparsers(dest="mode", required=True)
+    def parse(self):
+        parser = argparse.ArgumentParser(
+            description="Online meeting Behavior Analyzer - Analyze MP4 Online meetings or live webcam feed",
+            add_help=False  # Disable default help
+        )
 
-        # File mode
-        file_parser = subparsers.add_parser("file")
-        file_parser.add_argument("--input", required=True, help="Path to video file or folder")
-        file_parser.add_argument("--output", required=True, help="Output JSON path")
-        file_parser.add_argument("--look_mode", choices=["yaw", "yaw_pitch", "gaze"], default="yaw", help="Look-away detection mode")
+        parser.add_argument("-h", "--help", action="store_true", help="Show full help message and exit")
 
-        # Streaming mode (if you implement it)
-        stream_parser = subparsers.add_parser("stream")
-        stream_parser.add_argument("--camera", type=int, default=0, help="Camera index")
-        stream_parser.add_argument("--look_mode", choices=["yaw", "yaw_pitch", "gaze"], default="yaw", help="Look-away detection mode")
+        subparsers = parser.add_subparsers(dest="mode", required=False)
 
-        self.args = parser.parse_args()
+        # --- file mode ---
+        file_parser = subparsers.add_parser("file", help="Analyze MP4 video file(s)")
+        file_parser.add_argument("-i", "--input", required=True, help="Input MP4 file or folder path")
+        file_parser.add_argument("-o", "--output", required=True, help="Path to save JSON output")
+        file_parser.add_argument("--look-mode", default="yaw", choices=["yaw", "yaw_pitch", "gaze"])
+        file_parser.add_argument("--frame-skip", type=int, default=1)
+        file_parser.add_argument("--look-away-threshold", type=float, default=0.1)
 
-    def get(self):
-        return self.args
+        # --- live mode ---
+        live_parser = subparsers.add_parser("live", help="Start live video stream analysis")
+        live_parser.add_argument("--look-mode", default="yaw", choices=["yaw", "yaw_pitch", "gaze"])
+        live_parser.add_argument("--look-away-threshold", type=float, default=0.1)
+
+        # If just --help or -h is passed, print help for everything
+        args, unknown = parser.parse_known_args()
+        if args.help:
+            parser.print_help()
+            print("\nSubcommand 'file' options:")
+            file_parser.print_help()
+            print("\nSubcommand 'live' options:")
+            live_parser.print_help()
+            sys.exit(0)
+
+        return parser.parse_args()

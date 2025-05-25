@@ -58,7 +58,7 @@ py -m pip install mediapipe opencv-python numpy
 ### Analyze a single `.mp4` file
 
 ```bash
-python main.py file --input data/video1.mp4 --output report.json
+python main.py file --input data/video1.mp4 --output report.json --frame-skip 1 --look-away-threshold 0.1 --look-mode yaw
 ```
 
 ### Analyze a folder of `.mp4` files

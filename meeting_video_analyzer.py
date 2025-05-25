@@ -5,97 +5,77 @@ import json
 import os
 from glob import glob
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 2 = warning and info messages suppressed
+
 class MeetingVideoAnalyzer:
-    def __init__(self, frame_skip=0, look_away_thresh=0.1):
+    def __init__(self, look_mode="yaw", frame_skip=1, look_away_thresh=0.1):
+        self.look_mode = look_mode
         self.frame_skip = frame_skip
         self.look_away_thresh = look_away_thresh
         self.face_mesh = mp.solutions.face_mesh.FaceMesh(static_image_mode=False)
         self.holistic = mp.solutions.holistic.Holistic(static_image_mode=False)
 
     def _is_looking_away(self, frame_index, landmarks):
-        # Nose, left eye, right eye, chin
-        nose = landmarks[1]
-        left_eye = landmarks[33]
-        right_eye = landmarks[263]
-        chin = landmarks[152]
+        print(f"Frame {frame_index}: Nose landmark: x={landmarks[1].x}, y={landmarks[1].y}")
 
-        # Face direction vector approximation
-        face_vector_x = right_eye.x - left_eye.x
-        face_vector_y = chin.y - nose.y
+        if self.look_mode == "gaze":
+            # Advanced: use eye landmarks (horizontal deviation from face center)
+            left_eye = landmarks[33]
+            right_eye = landmarks[263]
+            eye_center_x = (left_eye.x + right_eye.x) / 2
+            deviation = abs(eye_center_x - 0.5)
+            return deviation > self.look_away_thresh
 
-        # Normalize the vector (optional, more precise)
-        magnitude = np.sqrt(face_vector_x**2 + face_vector_y**2)
-        if magnitude == 0:
-            return False
-        face_vector_x /= magnitude
-        face_vector_y /= magnitude
+        elif self.look_mode == "yaw":
+            # Horizontal only: nose deviation from center
+            nose_x = landmarks[1].x
+            return abs(nose_x - 0.5) > self.look_away_thresh
 
-        # If face_vector_x is large, person is likely looking sideways
-        print(f"Frame {frame_index}: face_vector_x = {face_vector_x:.2f}")
-        return abs(face_vector_x) > 0.35  # Tune this threshold
+        elif self.look_mode == "yaw_pitch":
+            # Both horizontal and vertical deviation
+            nose_x = landmarks[1].x
+            nose_y = landmarks[1].y
+            return (abs(nose_x - 0.5) > self.look_away_thresh or
+                    abs(nose_y - 0.5) > self.look_away_thresh)
+
+        return False
 
     def analyze_file(self, video_path):
         cap = cv2.VideoCapture(video_path)
         fps = cap.get(cv2.CAP_PROP_FPS)
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-
-        results = {
-            "video_file": os.path.basename(video_path),
-            "look_away_events": 0,
-            "total_look_away_duration_sec": 0,
-            "longest_look_away_sec": 0,
-            "head_turn_detected": False,
-            "multiple_people_detected": False
-        }
-
+        width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         frame_index = 0
-        look_start = None
-        look_durations = []
 
+        look_away_frames = []
+        
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
-            if frame_index % self.frame_skip != 0:
-                frame_index += 1
-                continue
 
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            mesh_result = self.face_mesh.process(rgb)
-            pose_result = self.holistic.process(rgb)
+            if frame_index % self.frame_skip == 0:
+                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                mesh_result = self.face_mesh.process(rgb)
 
-            if mesh_result.multi_face_landmarks:
-                if len(mesh_result.multi_face_landmarks) > 1:
-                    results["multiple_people_detected"] = True
-
-                face_landmarks = mesh_result.multi_face_landmarks[0].landmark
-                if self._is_looking_away(frame_index, face_landmarks):
-                    if look_start is None:
-                        look_start = frame_index
-                else:
-                    if look_start is not None:
-                        dur = (frame_index - look_start) / fps
-                        look_durations.append(dur)
-                        look_start = None
-            else:
-                look_start = None
-
-            if pose_result.pose_landmarks:
-                l = pose_result.pose_landmarks.landmark[11]
-                r = pose_result.pose_landmarks.landmark[12]
-                if abs(l.x - r.x) > 0.5:
-                    results["head_turn_detected"] = True
+                if mesh_result.multi_face_landmarks:
+                    face_landmarks = mesh_result.multi_face_landmarks[0].landmark
+                    if self._is_looking_away(frame_index, face_landmarks):
+                        time_sec = frame_index / fps
+                        look_away_frames.append(round(time_sec, 2))  # save time in seconds, rounded
 
             frame_index += 1
 
         cap.release()
 
-        if look_durations:
-            results["look_away_events"] = len(look_durations)
-            results["total_look_away_duration_sec"] = round(sum(look_durations), 2)
-            results["longest_look_away_sec"] = round(max(look_durations), 2)
-
-        return results
+        return {
+            "video_path": video_path,
+            "frame_skip": self.frame_skip,
+            "look_mode": self.look_mode,
+            "look_away_threshold": self.look_away_thresh,
+            "look_away_times_seconds": look_away_frames,
+            "total_look_away_events": len(look_away_frames)
+        }
 
     def analyze_folder(self, folder_path):
         reports = []
@@ -104,4 +84,3 @@ class MeetingVideoAnalyzer:
             report = self.analyze_file(filepath)
             reports.append(report)
         return reports
-
