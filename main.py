@@ -1,6 +1,7 @@
-from cmd_args import CmdArgs
-from meeting_video_analyzer import MeetingVideoAnalyzer
-from live_stream_analyzer import LiveStreamAnalyzer
+from sdk.cmd_args import CmdArgs
+from sdk.meeting_video_analyzer import MeetingVideoAnalyzer
+from sdk.live_stream_analyzer import LiveStreamAnalyzer
+from sdk.multiple_person_detector import MultiplePersonDetector
 import json
 import os
 
@@ -45,4 +46,12 @@ def main():
         live_analyzer.start()
 
 if __name__ == "__main__":
-    main()
+    counter = MultiplePersonDetector(model_name="yolov8n.pt")  # you can use yolov8s.pt or yolov8m.pt
+    result = counter.analyze_video("data/video3.mp4")
+
+    with open("report_people.json", "w") as f:
+        json.dump(result, f, indent=4)
+
+    print("✅ Analysis complete")
+
+    #main()

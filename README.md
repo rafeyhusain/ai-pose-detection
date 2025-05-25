@@ -44,13 +44,7 @@ pip install --upgrade pip
 Now you can install your required packages inside this environment:
 
 ```bash
-pip install mediapipe opencv-python numpy
-```
-
-or
-
-```bash
-py -m pip install mediapipe opencv-python numpy
+pip install mediapipe opencv-python numpy ultralytics
 ```
 
 ## Example Usage

@@ -1,0 +1,71 @@
+{
+    "detected": true,
+    "confidence": 0.43,
+    "detected_timestamps": [
+        {
+            "timestamp": "00-00",
+            "confidence": 0.91,
+            "image": "data\\video3\\00-00.png"
+        },
+        {
+            "timestamp": "00-03",
+            "confidence": 0.91,
+            "image": "data\\video3\\00-03.png"
+        },
+        {
+            "timestamp": "00-26",
+            "confidence": 0.92,
+            "image": "data\\video3\\00-26.png"
+        },
+        {
+            "timestamp": "00-30",
+            "confidence": 0.91,
+            "image": "data\\video3\\00-30.png"
+        },
+        {
+            "timestamp": "00-33",
+            "confidence": 0.9,
+            "image": "data\\video3\\00-33.png"
+        },
+        {
+            "timestamp": "00-43",
+            "confidence": 0.9,
+            "image": "data\\video3\\00-43.png"
+        },
+        {
+            "timestamp": "00-46",
+            "confidence": 0.9,
+            "image": "data\\video3\\00-46.png"
+        },
+        {
+            "timestamp": "01-00",
+            "confidence": 0.83,
+            "image": "data\\video3\\01-00.png"
+        },
+        {
+            "timestamp": "01-13",
+            "confidence": 0.87,
+            "image": "data\\video3\\01-13.png"
+        },
+        {
+            "timestamp": "01-16",
+            "confidence": 0.9,
+            "image": "data\\video3\\01-16.png"
+        },
+        {
+            "timestamp": "01-20",
+            "confidence": 0.83,
+            "image": "data\\video3\\01-20.png"
+        },
+        {
+            "timestamp": "01-33",
+            "confidence": 0.9,
+            "image": "data\\video3\\01-33.png"
+        },
+        {
+            "timestamp": "01-36",
+            "confidence": 0.92,
+            "image": "data\\video3\\01-36.png"
+        }
+    ]
+}
