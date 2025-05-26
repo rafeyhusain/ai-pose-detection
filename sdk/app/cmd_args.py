@@ -25,8 +25,9 @@ class CmdArgs:
         live_parser.add_argument("--look-mode", default="yaw", choices=["yaw", "yaw_pitch", "gaze"])
         live_parser.add_argument("--look-away-threshold", type=float, default=0.1)
 
+        args = parser.parse_args()
+        
         # If just --help or -h is passed, print help for everything
-        args, unknown = parser.parse_known_args()
         if args.help:
             parser.print_help()
             print("\nSubcommand 'file' options:")
@@ -35,4 +36,7 @@ class CmdArgs:
             live_parser.print_help()
             sys.exit(0)
 
-        return parser.parse_args()
+        if args.mode == "":
+            args.mode = "file"
+            
+        return args

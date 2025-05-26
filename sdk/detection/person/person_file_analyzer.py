@@ -1,44 +1,47 @@
-import shutil
 import time
 import cv2
-from pathlib import Path
 from ultralytics import YOLO
-from sdk.logger import Logger  
+from sdk.app.logger import Logger  
+from sdk.detection.core.core_analyzer import CoreAnalyzer
+from sdk.detection.person.person_request import PersonRequest
 
+class PersonFileAnalyzer(CoreAnalyzer):
+    def __init__(self, request: PersonRequest):
+        self.logger = Logger(__name__)
+        self.request = request
 
-class MultiplePersonDetector:
-    def __init__(self, model_name="yolov8n.pt", confidence=0.5, frame_skip=10):
-        self.logger = Logger()
-        self.confidence = confidence
-        self.frame_skip = frame_skip
         self.model = None
-        self.init_model(model_name)
 
-    def init_model(self, model_name):
+        self.init_model()
+        self.init_folder()
+
+    def init_model(self):
         try:
-            self.model = YOLO(model_name)
-            self.logger.log(f"Model loaded: {model_name}")
+            self.model = YOLO(self.request.model_name)
+            self.logger.info(f"Model loaded: {self.request.model_name}")
         except Exception as e:
-            self.logger.error("Failed to load YOLO model.", e)
+            self.logger.error(f"Failed to load model: {self.request.model_name}", e)
             raise
 
     def to_timestamp(self, seconds):
         mins = int(seconds // 60)
         secs = int(seconds % 60)
-        return f"{mins:02d}-{secs:02d}"
+        return f"{mins:02d}:{secs:02d}"
 
-    def open_video(self, video_path):
-        cap = cv2.VideoCapture(video_path)
+    def open_video(self, file_path):
+        cap = cv2.VideoCapture(file_path)
+
         if not cap.isOpened():
-            self.logger.error(f"Cannot open video file: {video_path}")
+            self.logger.error(f"Cannot open video file: {file_path}")
             return None
-        self.logger.log(f"Video opened: {video_path}")
+        
+        self.logger.info(f"Video opened: {file_path}")
+
         return cap
 
-    def save_frame(self, frame, output_folder, timestamp):
-        image_filename = output_folder / f"{timestamp}.png"
-        cv2.imwrite(str(image_filename), frame)
-        return str(image_filename)
+    @property
+    def type(self):
+        return "person"
 
     def analyze_frame(self, frame, frame_index):
         try:
@@ -48,10 +51,10 @@ class MultiplePersonDetector:
             self.logger.error(f"Model inference failed at frame {frame_index}", e)
             return None
 
-    def analyze_video(self, video_path):
+    def analyze(self):
         start_time = time.time()
         try:
-            cap = self.open_video(video_path)
+            cap = self.open_video(self.request.input)
             if cap is None:
                 return {"detected": False, "confidence": 0.0, "detected_timestamps": []}
 
@@ -60,22 +63,12 @@ class MultiplePersonDetector:
             detected_frames = 0
             frame_index = 0
 
-            base_name = Path(video_path).stem
-            output_folder = Path(video_path).parent / base_name
-
-            if output_folder.exists() and output_folder.is_dir():
-                shutil.rmtree(output_folder) 
-                self.logger.log(f"Output folder cleaned: {output_folder}")
-
-            output_folder.mkdir(exist_ok=True)
-            self.logger.log(f"Output folder: {output_folder}")
-
             while True:
                 ret, frame = cap.read()
                 if not ret:
                     break
 
-                if frame_index % self.frame_skip != 0:
+                if frame_index % self.request.frame_skip != 0:
                     frame_index += 1
                     continue
 
@@ -85,7 +78,7 @@ class MultiplePersonDetector:
                     frame_index += 1
                     continue
 
-                people = [det for det in results.boxes.data if int(det[5]) == 0 and det[4] > self.confidence]
+                people = [det for det in results.boxes.data if int(det[5]) == 0 and det[4] > self.request.confidence]
                 total_people = len(people)
 
                 if total_people > 1:
@@ -95,9 +88,9 @@ class MultiplePersonDetector:
 
                     confidence = round(float(max(det[4] for det in people)), 2)
                     timestamp = self.to_timestamp(cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0)
-                    image_path = self.save_frame(frame, output_folder, timestamp)
+                    image_path = self.save_frame(frame, timestamp)
 
-                    self.logger.log(f"At [{timestamp}], detected [{total_people}] people. Confidence [{confidence}]")
+                    self.logger.info(f"At [{timestamp}], detected [{total_people}] people. Confidence [{confidence}]")
 
                     timestamps.append({
                         "timestamp": timestamp,
@@ -113,16 +106,20 @@ class MultiplePersonDetector:
             cap.release()
 
             confidence_score = round(detected_frames / total_frames, 2) if total_frames else 0
-            self.logger.log("Video analysis complete", start_time)
+            self.logger.info("Video analysis complete", start_time)
 
             if detected_frames == 0:
-                self.logger.log("Not detected more than 1 person in the video")
+                self.logger.info("Not detected more than 1 person in the video")
 
-            return {
+            result = {
                 "detected": detected_frames > 0,
                 "confidence": confidence_score,
                 "detected_timestamps": timestamps
             }
+
+            self.save_result(result)
+            
+            return result
 
         except Exception as e:
             self.logger.error("Unexpected error during video analysis.", e)

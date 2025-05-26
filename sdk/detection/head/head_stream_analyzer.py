@@ -1,11 +1,7 @@
 import cv2
 import mediapipe as mp
-import numpy as np
-import json
-import os
-from glob import glob
 
-class LiveStreamAnalyzer:
+class HeadStreamAnalyzer:
     def __init__(self, look_away_thresh=0.3):
         self.look_away_thresh = look_away_thresh
         self.face_mesh = mp.solutions.face_mesh.FaceMesh()

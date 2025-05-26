@@ -11,22 +11,40 @@ The analysis can be run in two modes:
 1. **File Mode**: Analyze pre-recorded MP4 videos (single file or batch)
 2. **Live Mode**: Real-time analysis of webcam feed
 
-Results are saved as JSON reports containing metrics like:
-
-- Number of look-away events
-- Total duration of looking away
-- Longest look-away duration
-- Head turn detection
-- Multiple people detection
+Results are saved as JSON reports containing metrics:
 
 ```json
 {
-    "video_file": "video2.mp4",
-    "look_away_events": 0,
-    "total_look_away_duration_sec": 0,
-    "longest_look_away_sec": 0,
-    "head_turn_detected": false,
-    "multiple_people_detected": false
+  "multiple_people_detected": {
+    "detected": bool,
+    "confidence": float,
+    "detected_timestamps": [
+      {
+        "confidence": float,
+        "detected_people": int,
+        "image": "base64 or path to frame image",
+        "timestamp": float
+      }
+    ]
+  },
+  "eye_head_tracking": {
+    "detected": bool,
+    "confidence": float,
+    "eye_tracking_flags": [
+      {
+        "confidence": float,
+        "image": "base64 or path to frame image",
+        "timestamp": float
+      }
+    ],
+    "heapq_tracking_flags": [
+      {
+        "confidence": float,
+        "image": "base64 or path to frame image",
+        "timestamp": float
+      }
+    ]
+  }
 }
 ```
 
@@ -44,7 +62,7 @@ pip install --upgrade pip
 Now you can install your required packages inside this environment:
 
 ```bash
-pip install mediapipe opencv-python numpy ultralytics
+pip install mediapipe opencv-python numpy ultralytics pydantic
 ```
 
 ## Example Usage
