@@ -13,7 +13,7 @@ class PersonRequest(CoreRequest):
     def sample(cls) -> "PersonRequest":
         """Returns a sample request for testing purposes."""
         return cls(
-            input="data/videos/video2.mp4",
+            input="data/videos/video4.mp4",
             model_name="yolov8n.pt",
             confidence=0.5,
             frame_skip=5

@@ -51,6 +51,7 @@ Results are saved as JSON reports containing metrics:
 ## Setup Guide
 
 - Install Python 3.10, as MediaPipe supports Python 3.7–3.10
+- Run `winget install ffmpeg`
 - Create and activate a virtual environment using Python 3.10
 
 ```bash

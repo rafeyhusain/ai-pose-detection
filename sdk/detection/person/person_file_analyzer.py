@@ -13,8 +13,11 @@ class PersonFileAnalyzer(CoreAnalyzer):
         self.model = None
 
         self.init_model()
-        self.init_folder()
 
+    @property
+    def type(self):
+        return "person"
+    
     def init_model(self):
         try:
             self.model = YOLO(self.request.model_name)
@@ -22,11 +25,6 @@ class PersonFileAnalyzer(CoreAnalyzer):
         except Exception as e:
             self.logger.error(f"Failed to load model: {self.request.model_name}", e)
             raise
-
-    def to_timestamp(self, seconds):
-        mins = int(seconds // 60)
-        secs = int(seconds % 60)
-        return f"{mins:02d}:{secs:02d}"
 
     def open_video(self, file_path):
         cap = cv2.VideoCapture(file_path)
@@ -38,10 +36,6 @@ class PersonFileAnalyzer(CoreAnalyzer):
         self.logger.info(f"Video opened: {file_path}")
 
         return cap
-
-    @property
-    def type(self):
-        return "person"
 
     def analyze_frame(self, frame, frame_index):
         try:
@@ -118,7 +112,7 @@ class PersonFileAnalyzer(CoreAnalyzer):
             }
 
             self.save_result(result)
-            
+
             return result
 
         except Exception as e:

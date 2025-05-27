@@ -1,7 +1,13 @@
 {
     "cSpell.words": [
+        "ffprobe",
+        "GLOG",
         "imshow",
         "imwrite",
+        "minloglevel",
+        "nokey",
+        "noprint",
+        "rafeyhusain",
         "yolov"
     ]
 }

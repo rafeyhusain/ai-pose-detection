@@ -16,10 +16,10 @@ class HeadRequest(CoreRequest):
         """Returns a sample request for testing purposes."""
         return cls(
             mode="file",
-            input="data/videos/video2.mp4",
+            input="data/videos/video5.mp4",
             look_mode="yaw_pitch",
             frame_skip=5,
-            look_away_threshold=0.6
+            look_away_threshold=0.1
         )
 
     @model_validator(mode='before')
