@@ -1,0 +1,14 @@
+path: datasets/cheating/
+
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: normal
+  1: mobile
+  2: talking
+  3: peeking
+  4: notes
+  5: copying
+  6: multiple people

@@ -36,6 +36,8 @@ class CmdArgs:
             live_parser.print_help()
             sys.exit(0)
 
+        args.input = "data/videos/video5.mp4"
+        
         if args.mode == "":
             args.mode = "file"
             

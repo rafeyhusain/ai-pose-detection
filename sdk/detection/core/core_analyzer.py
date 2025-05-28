@@ -3,12 +3,14 @@ from pathlib import Path
 import shutil
 import cv2
 from sdk.app.logger import Logger
+from sdk.detection.core.analyzer_result import AnalyzerResult
 from sdk.detection.core.core_request import CoreRequest
 
 class CoreAnalyzer:
     def __init__(self):
         self.logger = Logger(__name__)
         self._request = None
+        self.model = None
 
     @property
     def request(self) -> CoreRequest:
@@ -82,9 +84,11 @@ class CoreAnalyzer:
         folder = self.output_folder
 
         if clean and folder.exists() and folder.is_dir():
-            #shutil.rmtree(folder)
-            pass
+            shutil.rmtree(folder)
 
         folder.mkdir(parents=True, exist_ok=True)
         
         return folder
+    
+    def analyze_frame(self, frame_index, frame) -> AnalyzerResult:
+        return None

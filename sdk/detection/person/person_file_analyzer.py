@@ -2,6 +2,7 @@ import time
 import cv2
 from ultralytics import YOLO
 from sdk.app.logger import Logger  
+from sdk.detection.core.analyzer_result import AnalyzerResult
 from sdk.detection.core.core_analyzer import CoreAnalyzer
 from sdk.detection.person.person_request import PersonRequest
 
@@ -9,16 +10,13 @@ class PersonFileAnalyzer(CoreAnalyzer):
     def __init__(self, request: PersonRequest):
         self.logger = Logger(__name__)
         self.request = request
-
         self.model = None
-
-        self.init_model()
-
+        self.init()
     @property
     def type(self):
         return "person"
     
-    def init_model(self):
+    def init(self):
         try:
             self.model = YOLO(self.request.model_name)
             self.logger.info(f"Model loaded: {self.request.model_name}")
@@ -26,26 +24,34 @@ class PersonFileAnalyzer(CoreAnalyzer):
             self.logger.error(f"Failed to load model: {self.request.model_name}", e)
             raise
 
-    def open_video(self, file_path):
-        cap = cv2.VideoCapture(file_path)
+    def analyze_frame(self, frame_index, frame) -> AnalyzerResult:
+        result = AnalyzerResult.default()
 
-        if not cap.isOpened():
-            self.logger.error(f"Cannot open video file: {file_path}")
-            return None
-        
-        self.logger.info(f"Video opened: {file_path}")
-
-        return cap
-
-    def analyze_frame(self, frame, frame_index):
         try:
+            if frame_index % self.request.frame_skip != 0:
+                result.skipped = True
+                return result
+
             results = self.model(frame, verbose=False)[0]
-            return results
+
+            people = [det for det in results.boxes.data if int(det[5]) == 0 and det[4] > self.request.confidence]
+            total_people = len(people)
+            result.success = total_people > 1
+
+            if result.success:
+                for det in people:
+                    x1, y1, x2, y2 = map(int, det[:4])
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)  # green box
+
+                result.confidence = round(float(max(det[4] for det in people)), 2)
+                result.detail = dict({"count": total_people})
         except Exception as e:
             self.logger.error(f"Model inference failed at frame {frame_index}", e)
-            return None
+        
+        return result
+        
 
-    def analyze(self):
+    def analyze123(self):
         start_time = time.time()
         try:
             cap = self.open_video(self.request.input)

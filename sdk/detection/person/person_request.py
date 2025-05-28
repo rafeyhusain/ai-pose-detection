@@ -10,10 +10,10 @@ class PersonRequest(CoreRequest):
     frame_skip: int = Field(5, ge=0, description="Number of frames to skip between detections")
 
     @classmethod
-    def sample(cls) -> "PersonRequest":
+    def default(cls, input) -> "PersonRequest":
         """Returns a sample request for testing purposes."""
         return cls(
-            input="data/videos/video4.mp4",
+            input=input,
             model_name="yolov8n.pt",
             confidence=0.5,
             frame_skip=5

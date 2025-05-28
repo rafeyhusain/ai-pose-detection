@@ -10,16 +10,18 @@ class HeadRequest(CoreRequest):
     look_mode: Literal["yaw", "yaw_pitch", "gaze"] = Field("yaw_pitch", description="Look direction analysis mode")
     frame_skip: int = Field(5, ge=0, description="Number of frames to skip between detections")
     look_away_threshold: float = Field(0.6, ge=0.0, le=1.0, description="Threshold to detect looking away (0.0 to 1.0)")
+    threshold_look_away_duration: int = Field(5, ge=0, description="Threshold to detect looking away duration in seconds")
     
     @classmethod
-    def sample(cls) -> "HeadRequest":
+    def default(cls, input) -> "HeadRequest":
         """Returns a sample request for testing purposes."""
         return cls(
             mode="file",
-            input="data/videos/video5.mp4",
+            input=input,
             look_mode="yaw_pitch",
             frame_skip=5,
-            look_away_threshold=0.1
+            look_away_threshold=0.01,
+            threshold_look_away_duration = 5
         )
 
     @model_validator(mode='before')

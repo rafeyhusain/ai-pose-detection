@@ -5,6 +5,7 @@ import os
 from glob import glob
 
 from sdk.app.logger import Logger
+from sdk.detection.core.analyzer_result import AnalyzerResult
 from sdk.detection.core.core_analyzer import CoreAnalyzer
 from sdk.detection.head.head_request import HeadRequest
 
@@ -53,7 +54,7 @@ class HeadFileAnalyzer(CoreAnalyzer):
 
         return result, confidence
 
-    def analyze(self):
+    def analyze123(self):
         if os.path.isfile(self.request.input):
             result = self.analyze_file(self.request.input)
             self.save_result(result)
@@ -79,27 +80,86 @@ class HeadFileAnalyzer(CoreAnalyzer):
 
         return output
     
+    # def analyze_file(self, file_path: str):
+    #     self.set_file(file_path)
+
+    #     cap = cv2.VideoCapture(file_path)
+    #     frame_index = 0
+    #     frame_rate = cap.get(cv2.CAP_PROP_FPS) or 30
+        
+    #     head_tracking_flags = []
+        
+    #     while cap.isOpened():
+    #         ret, frame = cap.read()
+    #         if not ret:
+    #             break
+
+    #         self.analyze_frame(cap, frame_index, head_tracking_flags, frame)
+
+    #         frame_index += 1
+
+    #     cap.release()
+
+    #     result = self.get_result(head_tracking_flags)
+
+    #     return result
+
     def analyze_file(self, file_path: str):
         self.set_file(file_path)
 
         cap = cv2.VideoCapture(file_path)
         frame_index = 0
+        frame_rate = cap.get(cv2.CAP_PROP_FPS) or 30  # Default to 30
 
         head_tracking_flags = []
-        
+        look_away_segment = []
+        is_looking_away = False
+        look_away_frame_count = 0
+
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
 
-            self.analyze_frame(cap, frame_index, head_tracking_flags, frame)
+            if frame_index % self.request.frame_skip == 0:
+                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                mesh_result = self.face_mesh.process(rgb)
+
+                if mesh_result.multi_face_landmarks:
+                    face_landmarks = mesh_result.multi_face_landmarks[0].landmark
+                    detected, confidence = self._is_looking_away(frame_index, face_landmarks)
+
+                    if detected:
+                        is_looking_away = True
+                        look_away_frame_count += self.request.frame_skip
+                        timestamp = self.to_timestamp(cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0)
+                        image_path = self.save_frame(frame, timestamp)
+                        look_away_segment.append({
+                            "confidence": confidence,
+                            "timestamp": timestamp,
+                            "image": image_path
+                        })
+                    else:
+                        if is_looking_away:
+                            duration = look_away_frame_count / frame_rate
+                            if duration >= self.request.threshold_look_away_duration:
+                                head_tracking_flags.extend(look_away_segment)
+                            # reset
+                            look_away_segment = []
+                            look_away_frame_count = 0
+                            is_looking_away = False
 
             frame_index += 1
+
+        # Handle end-of-video last segment
+        if is_looking_away:
+            duration = look_away_frame_count / frame_rate
+            if duration >= self.request.threshold_look_away_duration:
+                head_tracking_flags.extend(look_away_segment)
 
         cap.release()
 
         result = self.get_result(head_tracking_flags)
-
         return result
 
     def analyze_frame(self, cap, frame_index, head_tracking_flags, frame):
@@ -148,3 +208,5 @@ class HeadFileAnalyzer(CoreAnalyzer):
         
         return result
 
+    def analyze_frame(self, frame_index, frame) -> AnalyzerResult:
+        pass

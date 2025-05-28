@@ -21,9 +21,11 @@ Results are saved as JSON reports containing metrics:
     "detected_timestamps": [
       {
         "confidence": float,
-        "detected_people": int,
-        "image": "base64 or path to frame image",
-        "timestamp": float
+        "image": "path to frame image",
+        "timestamp": float,
+        "detail": {
+          "count": int
+        }
       }
     ]
   },
@@ -33,15 +35,19 @@ Results are saved as JSON reports containing metrics:
     "eye_tracking_flags": [
       {
         "confidence": float,
-        "image": "base64 or path to frame image",
-        "timestamp": float
+        "image": "path to frame image",
+        "timestamp": float,
+        "detail": {
+        }
       }
     ],
-    "heapq_tracking_flags": [
+    "head_tracking_flags": [
       {
         "confidence": float,
-        "image": "base64 or path to frame image",
-        "timestamp": float
+        "image": "path to frame image",
+        "timestamp": float,
+        "detail": {
+        }
       }
     ]
   }
@@ -63,7 +69,7 @@ pip install --upgrade pip
 Now you can install your required packages inside this environment:
 
 ```bash
-pip install mediapipe opencv-python numpy ultralytics pydantic
+pip install mediapipe opencv-python numpy ultralytics pydantic label-studio
 ```
 
 ## Example Usage
@@ -84,4 +90,10 @@ python main.py file --input data/videos/ --output batch_report.json
 
 ```bash
 python main.py live
+```
+
+## Train
+
+```bash
+python -m sdk.train.main
 ```
